@@ -92,7 +92,7 @@ void initLevel(){
     printf("LEVEL: %d\n", currentLevel);
     score = 0;
     penalty = currentLevel*3;
-    limit = currentLevel*50;
+    limit = (currentLevel+1)*50;
     currentLevel++;
 }
 
@@ -113,6 +113,7 @@ void tick_elements() {
     }
     for (int i=0; i <enemies.size(); ++i)
         enemies[i].moveRight();
+    
     for (int i=0; i <enemies.size(); ++i)
     {
         if (detect_collision(ball.bounding_box(), enemies[i].bounding_box())) {
@@ -133,6 +134,13 @@ void tick_elements() {
                 ball.speedy *= 1.2;
             }
             displayScore();
+        }
+    }
+
+    for (int i=0; i <enemies.size(); ++i)
+    {
+        if(((enemies[i]).position.x - (enemies[i]).radius)>=4) {
+            (enemies[i]).position.x = -4 - (enemies[i]).radius;
         }
     }
     return;
@@ -165,7 +173,7 @@ void initGL(GLFWwindow *window, int width, int height) {
     /* Objects should be created before any other gl function and shaders */
     // Create the models
 
-    ball        = Ball(4, -2.9, 0.3f, COLOR_RED, 0.1);
+    ball        = Ball(0, -2.9, 0.3f, COLOR_RED, 0.1);
     ground      = Ground(-2, -5.5, COLOR_GREEN);
     createEnemies();
 

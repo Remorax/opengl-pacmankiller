@@ -4,13 +4,13 @@
 Ground::Ground(float x, float y, color_t color) {
     this->position = glm::vec3(x, y, 0);
     static const GLfloat vertex_buffer_data[] = {
-        -6, -2.3, 0, // vertex 1
+        -2, -2.3, 0, // vertex 1
          6, -2.3, 0, // vertex 2
          6,  2.3, 0, // vertex 3
 
          6,  2.3, 0, // vertex 3
-        -6,  2.3, 0, // vertex 4
-        -6, -2.3, 0 // vertex 1
+        -2,  2.3, 0, // vertex 4
+        -2, -2.3, 0 // vertex 1
     };
 
     this->object = create3DObject(GL_TRIANGLES, 6, vertex_buffer_data, color, GL_FILL);
