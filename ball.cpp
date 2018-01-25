@@ -17,7 +17,7 @@ Ball::Ball(float x, float y, float radius, color_t color, float speedx) {
 
         GLfloat x = (GLfloat) radius * cosf(theta * M_PI / 180.0f);
         GLfloat y = (GLfloat) radius * sinf(theta * M_PI / 180.0f);
-        GLfloat z = 0.0f;
+        GLfloat z = 1.1f;
 
         g_vertex_buffer_data[currentSize++] = x;
         g_vertex_buffer_data[currentSize++] = y;
@@ -44,12 +44,34 @@ void Ball::set_position(float x, float y) {
 
 void Ball::moveLeft() {
     this->position.x -= this->speedx;
-    // this->position.y -= speed;
+    // this->position.z = 1;
+}
+
+void Ball::pondMoveLeft(float radius) {
+    float vertDisp = -2.9 - this->position.y; 
+    float alpha = asin(vertDisp/radius);
+    float dtheta = 0.1f;
+    float angle = (alpha + dtheta/2);
+    float dx = (radius*2*sinf(angle * M_PI / 180.0f)*sinf((dtheta/2) * M_PI / 180.0f));
+    float dy = (radius*2*cosf(angle * M_PI / 180.0f)*sinf((dtheta/2) * M_PI / 180.0f));
+    this->position.x -= dx;
+    this->position.y += dy;
 }
 
 void Ball::moveRight() {
     this->position.x += this->speedx;
-    // this->position.y -= speed;
+    // this->position.z = 1;
+}
+
+void Ball::pondMoveRight(float radius) {
+    float vertDisp = -2.9 - this->position.y; 
+    float alpha = asin(vertDisp/radius);
+    float dtheta = 0.1f;
+    float angle = (alpha + dtheta/2);
+    float dx = (radius*2*sinf(angle * M_PI / 180.0f)*sinf((dtheta/2) * M_PI / 180.0f));
+    float dy = (radius*2*cosf(angle * M_PI / 180.0f)*sinf((dtheta/2) * M_PI / 180.0f));
+    this->position.x += dx;
+    this->position.y -= dy;
 }
 
 int Ball::jump() {
@@ -64,6 +86,7 @@ int Ball::jump() {
         return 0;
     }
     return 1;
+    // this->position.z = 1;
 }
 
 int Ball::fall() {
@@ -73,6 +96,7 @@ int Ball::fall() {
         return 0;
     }
     return 1;
+    // this->position.z = 1;
 }
 
 bounding_box_t Ball::bounding_box() {

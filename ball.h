@@ -13,7 +13,9 @@ public:
     void draw(glm::mat4 VP);
     void set_position(float x, float y);
     void moveLeft();
+    void pondMoveLeft(float radius);
     void moveRight();
+    void pondMoveRight(float radius);
     int jump();
     int fall();
     double speedx, speedy;

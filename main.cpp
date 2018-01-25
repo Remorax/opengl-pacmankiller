@@ -2,6 +2,10 @@
 #include "timer.h"
 #include "ball.h"
 #include "ball.cpp"
+#include "pool.h"
+#include "pool.cpp"
+#include "pole.cpp"
+#include "pole.h"
 #include "ground.h"
 #include "ground.cpp"
 #include "timer.cpp"
@@ -22,8 +26,12 @@ GLFWwindow *window;
 Ball ball;
 vector <Ball> enemies(150);
 Ground ground;
+Pool pool;
+Pole pole1;
+Pole pole2;
+Pool trampoline;
 
-int isJump = 0, isFall = 0, doneJump, isCameraChange=0, score = 0, levels=10, currentLevel=1, penalty=0, limit=50;
+int isJump = 0, isFall = 0, doneJump, isCameraChange=0, score = 0, levels=10, currentLevel=1, penalty=0, limit=50, inPond=0;
 
 float screen_zoom = 1, screen_center_x = 0, screen_center_y = 0;
 
@@ -61,7 +69,11 @@ void draw() {
     glm::mat4 MVP;  // MVP = Projection * View * Model
     // Scene render
     ball.draw(VP);
+    pool.draw(VP);
     ground.draw(VP);
+    trampoline.draw(VP);
+    pole1.draw(VP);
+    pole2.draw(VP);
     for (int i=0; i<enemies.size(); ++i)
         enemies[i].draw(VP);
 }
@@ -71,10 +83,16 @@ void tick_input(GLFWwindow *window) {
     int right = glfwGetKey(window, GLFW_KEY_RIGHT);
     int up = glfwGetKey(window, GLFW_KEY_UP);
     if (left) {
-        ball.moveLeft();
+        if(inPond)
+            ball.pondMoveLeft(pool.radius);
+        else
+            ball.moveLeft();
     }
     else if (right) {
-        ball.moveRight();
+        if(inPond)
+            ball.pondMoveRight(pool.radius);
+        else
+            ball.moveRight();
     }
     else if (up) {
         isJump = 1;
@@ -97,6 +115,20 @@ void initLevel(){
 }
 
 void tick_elements() {
+    if ((ball.position.x>=1.3) && (ball.position.x<=2.85)){
+        inPond = 1;
+    }
+    else{
+        inPond = 0;
+    }
+
+    if ((ball.position.x>=-2.5) && (ball.position.x<=-1.5) &&ball.position.y<=-2.5){
+        isJump = 1;
+        isFall = 0;
+        ball.speedy *= 1.35;
+        ball.jump();
+    }
+
     if(ball.position.y>=screen_center_y){
         isCameraChange=1;
         screen_center_y = ball.position.y;
@@ -172,9 +204,12 @@ void createEnemies () {
 void initGL(GLFWwindow *window, int width, int height) {
     /* Objects should be created before any other gl function and shaders */
     // Create the models
-
     ball        = Ball(0, -2.9, 0.3f, COLOR_RED, 0.1);
     ground      = Ground(-2, -5.5, COLOR_GREEN);
+    pool        = Pool(2, -3.2, 0.8f, COLOR_LIGHTBLUE);
+    trampoline  = Pool(-2, -2.7, 0.5f, COLOR_BROWN);
+    pole1       = Pole(-2.5, -2.9, COLOR_BROWN);
+    pole2       = Pole(-1.5, -2.9, COLOR_BROWN);
     createEnemies();
 
     // Create and compile our GLSL program from the shaders
