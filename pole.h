@@ -7,7 +7,7 @@
 class Pole {
 public:
     Pole() {}
-    Pole(float x, float y, color_t color);
+    Pole(float x, float y, color_t color, GLfloat* vertex_buffer_data);
     glm::vec3 position;
     float rotation;
     void draw(glm::mat4 VP);

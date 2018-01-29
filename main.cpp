@@ -27,15 +27,24 @@ Ball ball;
 vector <Ball> enemies(150);
 Ground ground;
 Pool pool;
-Pole pole1;
-Pole pole2;
+Pole tPole1, tPole2;
+Pole mPoleCenter, mPoleEnd1, mPoleEnd2;
 Pool trampoline;
 
-int isJump = 0, isFall = 0, doneJump, isCameraChange=0, score = 0, levels=10, currentLevel=1, penalty=0, limit=50, inPond=0;
+int isJump = 0, isDrew=0, isFall = 0, doneJump, isCameraChange=0, score = 0, levels=10, currentLevel=1, penalty=0, limit=50, inPond=0, isMagnet=0, current_frame=0, endTime=0, start_time=0, vert=0, hor=0;
 
-float screen_zoom = 1, screen_center_x = 0, screen_center_y = 0;
+float screen_zoom = 1, screen_center_x = 0, screen_center_y = 0, magnetX=0, magnetY=0, deltaX=10000,deltaY=10000;
 
 Timer t60(1.0 / 60);
+
+GLfloat vertex_buffer_data[] = {
+        -0.08, -0.3, 0,
+         0.08, -0.3, 0,
+         0.08,  0.3, 0,
+         0.08,  0.3, 0,
+        -0.08,  0.3, 0,
+        -0.08, -0.3, 0
+};
 
 /* Render the scene with openGL */
 /* Edit this function according to your assignment */
@@ -72,33 +81,50 @@ void draw() {
     pool.draw(VP);
     ground.draw(VP);
     trampoline.draw(VP);
-    pole1.draw(VP);
-    pole2.draw(VP);
+    tPole1.draw(VP);
+    tPole2.draw(VP);
+    if (isMagnet==1 && isDrew==1){
+        mPoleEnd1.draw(VP);
+        mPoleEnd2.draw(VP);
+        mPoleCenter.draw(VP);
+    }
     for (int i=0; i<enemies.size(); ++i)
         enemies[i].draw(VP);
 }
 
 void tick_input(GLFWwindow *window) {
-    int left  = glfwGetKey(window, GLFW_KEY_LEFT);
-    int right = glfwGetKey(window, GLFW_KEY_RIGHT);
-    int up = glfwGetKey(window, GLFW_KEY_UP);
-    if (left) {
-        if(inPond)
-            ball.pondMoveLeft(pool.radius);
-        else
-            ball.moveLeft();
+    if(isDrew==0){
+        int left  = glfwGetKey(window, GLFW_KEY_LEFT);
+        int right = glfwGetKey(window, GLFW_KEY_RIGHT);
+        int space = glfwGetKey(window, GLFW_KEY_SPACE);
+        int up = glfwGetKey(window, GLFW_KEY_UP);
+        if (left) {
+            if(inPond)
+                ball.pondMoveLeft(pool.radius);
+            else
+                ball.moveLeft();
+        }
+        else if (right) {
+            if(inPond)
+                ball.pondMoveRight(pool.radius);
+            else
+                ball.moveRight();
+        }
+        else if (up||space) {
+            isJump = 1;
+            isFall = 0;
+            ball.speedy = 0.1;
+            ball.jump();
+        }
     }
-    else if (right) {
-        if(inPond)
-            ball.pondMoveRight(pool.radius);
-        else
-            ball.moveRight();
-    }
-    else if (up) {
-        isJump = 1;
-        isFall = 0;
-        ball.speedy = 0.1;
-        ball.jump();
+    else {
+        float signx = ((magnetX-ball.position.x)*hor);
+        float signy = ((magnetY-ball.position.y)*vert);
+        printf("signx:%f signy:%f\n", signx, signy);
+        deltaX = (signx<0)?0:(magnetX - ball.position.x);
+        deltaY = (signy<0)?0:(magnetY - ball.position.y);
+        // printf("temp:%f temp2:%f now:%f now2:%f deltaX:%f deltaY:%f\n", temp, temp2, (magnetX - ball.position.x), (magnetY - ball.position.y), deltaX, deltaY);
+        ball.moveInMagneticField(deltaX, deltaY, 1.2f);
     }
 }
 
@@ -111,11 +137,64 @@ void initLevel(){
     score = 0;
     penalty = currentLevel*3;
     limit = (currentLevel+1)*50;
+    if (currentLevel==2){
+        start_time = current_frame + rand()%60 + 120;
+        isMagnet = 1;
+    }
+    else{
+        isMagnet = 0;
+        isDrew = 0;
+    }
     currentLevel++;
 }
 
+void drawMagnet()
+{
+    GLfloat vertex_buffer_data2[] = {
+            -0.3, -0.08, 0,
+             0.3, -0.08, 0,
+             0.3,  0.08, 0,
+             0.3,  0.08, 0,
+            -0.3,  0.08, 0,
+            -0.3, -0.08, 0
+    };
+    float l = (ball.position.y<2)?(ball.position.y+2):(ball.position.y-2);
+    magnetY = l + static_cast <float> (rand()) / (static_cast <float> (RAND_MAX/4.0));
+    magnetX = (rand()%2==0)?-3.5:3.5;
+    float xshift = (magnetX<0)?0.2:-0.2;
+    mPoleCenter  = Pole(magnetX, magnetY, COLOR_RED, vertex_buffer_data);
+    mPoleEnd1    = Pole(magnetX+xshift, magnetY-0.3, COLOR_RED, vertex_buffer_data2);
+    mPoleEnd2    = Pole(magnetX+xshift, magnetY+0.3, COLOR_RED, vertex_buffer_data2);
+    return;
+}
+
 void tick_elements() {
-    if ((ball.position.x>=1.3) && (ball.position.x<=2.85)){
+    current_frame++;
+    if (isMagnet==1)
+    {
+        if (isDrew==1){
+            if (current_frame==endTime){
+                start_time = current_frame + rand()%60 + 120;
+                isDrew=0;
+                ball.speedx = 0.1;
+                ball.speedy = 0.1;
+                isFall=1;
+            }
+        }
+        else {
+            if (current_frame==start_time){
+                isDrew=1;
+                isJump=0;
+                isFall=0;
+                drawMagnet();
+                hor = ((magnetX - ball.position.x)<0)?-1:1;
+                vert = ((magnetY - ball.position.y)<0)?-1:1;
+                endTime = current_frame + rand()%120 + 240;
+            }
+        }
+    }
+
+    if ((ball.position.x>=1.3) && (ball.position.x<=2.85) && (ball.position.y<=-2.9)){
         inPond = 1;
     }
     else{
@@ -132,17 +211,16 @@ void tick_elements() {
     if(ball.position.y>=screen_center_y){
         isCameraChange=1;
         screen_center_y = ball.position.y;
-        reset_screen();
     }
     else if(ball.position.y<=screen_center_y && ball.position.y>1){
         screen_center_y = ball.position.y;
-        reset_screen();
     }
     else{
         if(isCameraChange==1){
             screen_center_y = (ball.position.y<-3)?0:(ball.position.y);
         }
     }
+    reset_screen();
     for (int i=0; i <enemies.size(); ++i)
         enemies[i].moveRight();
     
@@ -154,16 +232,19 @@ void tick_elements() {
                     isFall = 1;
                     isJump = 0;
                 }
+                if (isDrew==1)
+                    break;
                 score -= penalty;
             }
             else {
-                if(isFall==1){
+                if(isFall==1&&isDrew!=1){
                     isFall = 0;
                     isJump = 1;
                 }
                 score += enemies[i].score;
                 enemies.erase(enemies.begin() + i);
-                ball.speedy *= 1.2;
+                if (isDrew!=1)
+                    ball.speedy *= 1.2;
             }
             displayScore();
         }
@@ -204,12 +285,15 @@ void createEnemies () {
 void initGL(GLFWwindow *window, int width, int height) {
     /* Objects should be created before any other gl function and shaders */
     // Create the models
-    ball        = Ball(0, -2.9, 0.3f, COLOR_RED, 0.1);
+
+    screen_center_y = 0;
+    ball        = Ball(0, -2.9, 0.3f, COLOR_DARKBLUE, 0.1);
     ground      = Ground(-2, -5.5, COLOR_GREEN);
     pool        = Pool(2, -3.2, 0.8f, COLOR_LIGHTBLUE);
     trampoline  = Pool(-2, -2.7, 0.5f, COLOR_BROWN);
-    pole1       = Pole(-2.5, -2.9, COLOR_BROWN);
-    pole2       = Pole(-1.5, -2.9, COLOR_BROWN);
+    tPole1       = Pole(-2.5, -2.9, COLOR_BROWN, vertex_buffer_data);
+    tPole2       = Pole(-1.5, -2.9, COLOR_BROWN, vertex_buffer_data);
+
     createEnemies();
 
     // Create and compile our GLSL program from the shaders
@@ -234,18 +318,17 @@ void initGL(GLFWwindow *window, int width, int height) {
     cout << "GLSL: " << glGetString(GL_SHADING_LANGUAGE_VERSION) << endl;
 }
 
-
 int main(int argc, char **argv) {
 
     /* Draw in loop */
     int i=0;
+    int width  = 600;
+    int height = 600;
+    window = initGLFW(width, height);
     do
     {
         srand(time(0));
-        int width  = 600;
-        int height = 600;
         initLevel();
-        window = initGLFW(width, height);
 
         initGL (window, width, height);
         
@@ -259,7 +342,6 @@ int main(int argc, char **argv) {
                     break;
                 draw();
                 // Swap Frame Buffer in double buffering
-                // drawBitmapText("Score",3,3,0);
                 glfwSwapBuffers(window);
                 tick_elements();
                 if(isJump==1){
@@ -278,14 +360,20 @@ int main(int argc, char **argv) {
                 }
                 tick_input(window);
             }
-
             // Poll for Keyboard and mouse events
             glfwPollEvents();
         }
         i++;
     } while(i<levels);
-
     quit(window);
+}
+
+void mouseMoveBall(double xoffset) {
+    if (xoffset<0)
+        ball.moveLeft();
+    else if(xoffset>0)
+        ball.moveRight();
+    return;
 }
 
 bool detect_collision(bounding_box_t a, bounding_box_t b) {

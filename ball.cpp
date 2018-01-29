@@ -47,6 +47,30 @@ void Ball::moveLeft() {
     // this->position.z = 1;
 }
 
+void Ball::moveInMagneticField(float a, float b, float c) {
+    if (a==0 && b==0)
+        return;
+    printf("%f %f\n", a,b);
+    double theta = acos(a/sqrt(pow(a,2)+pow(b,2)));
+    float signx = (a<0)?-1:((a>0)?1:0);
+    float signy = (b<0)?-1:((b>0)?1:0);
+    this->position.x += (signx*speedx);
+    this->position.y += (signy*speedy);
+    // printf("%f %f a:%f b:%f c:%f theta:%lf\n", deltax,deltay,a,b,c,theta*180.0f/M_PI);
+    if(a!=0)
+        this->speedy += (tanf(theta)+1)*0.002;
+    else{
+        this->speedx=0;
+        this->speedy += 0.1;
+    }
+    if(b!=0)
+        this->speedx += 0.002;
+    else
+        this->speedy=0;
+    this->speedx += 0.002;
+    return;
+}
+
 void Ball::pondMoveLeft(float radius) {
     float vertDisp = -2.9 - this->position.y; 
     float alpha = asin(vertDisp/radius);

@@ -1,18 +1,8 @@
 #include "pole.h"
 #include "main.h"
 
-Pole::Pole(float x, float y, color_t color) {
+Pole::Pole(float x, float y, color_t color, GLfloat* vertex_buffer_data) {
     this->position = glm::vec3(x, y, 0);
-    static const GLfloat vertex_buffer_data[] = {
-        -0.08, -0.3, 0, // vertex 1
-         0.08, -0.3, 0, // vertex 2
-         0.08,  0.3, 0, // vertex 3
-
-         0.08,  0.3, 0, // vertex 3
-        -0.08,  0.3, 0, // vertex 4
-        -0.08, -0.3, 0 // vertex 1
-    };
-
     this->object = create3DObject(GL_TRIANGLES, 6, vertex_buffer_data, color, GL_FILL);
 }
 

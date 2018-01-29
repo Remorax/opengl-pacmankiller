@@ -16,6 +16,7 @@ public:
     void pondMoveLeft(float radius);
     void moveRight();
     void pondMoveRight(float radius);
+    void moveInMagneticField(float a, float b, float c);
     int jump();
     int fall();
     double speedx, speedy;
