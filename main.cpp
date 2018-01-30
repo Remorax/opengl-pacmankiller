@@ -93,39 +93,62 @@ void draw() {
 }
 
 void tick_input(GLFWwindow *window) {
+    int left  = glfwGetKey(window, GLFW_KEY_LEFT);
+    int right = glfwGetKey(window, GLFW_KEY_RIGHT);
+    int space = glfwGetKey(window, GLFW_KEY_SPACE);
+    int up = glfwGetKey(window, GLFW_KEY_UP);
     if(isDrew==0){
-        int left  = glfwGetKey(window, GLFW_KEY_LEFT);
-        int right = glfwGetKey(window, GLFW_KEY_RIGHT);
-        int space = glfwGetKey(window, GLFW_KEY_SPACE);
-        int up = glfwGetKey(window, GLFW_KEY_UP);
-        if (left) {
-            if(inPond)
+        if (inPond==1) {
+            if (left)
                 ball.pondMoveLeft(pool.radius);
-            else
-                ball.moveLeft();
-        }
-        else if (right) {
-            if(inPond)
+            else if (right)
                 ball.pondMoveRight(pool.radius);
-            else
-                ball.moveRight();
+            else if (up||space) {
+                isJump = 1;
+                isFall = 0;
+                ball.speedy = 0.8;
+                ball.jump();
+            }
+            else {
+                if (ball.position.x<2)
+                    ball.pondMoveRight(pool.radius);
+                else if (ball.position.x>2)
+                    ball.pondMoveLeft(pool.radius);
+            }
         }
+        else {
+            if (left)
+                ball.moveLeft();
+            else if (right)
+                ball.moveRight();
+            else if (up||space) {
+                isJump = 1;
+                isFall = 0;
+                ball.speedy = 0.1;
+                ball.jump();
+            }
+        }
+    }
+    else {
+        if (left)
+            ball.moveLeft();
+        else if (right)
+            ball.moveRight();
         else if (up||space) {
             isJump = 1;
             isFall = 0;
             ball.speedy = 0.1;
             ball.jump();
         }
+        else{
+            float signx = ((magnetX-ball.position.x)*hor);
+            float signy = ((magnetY-ball.position.y)*vert);
+            deltaX = (signx<0)?0:(magnetX - ball.position.x);
+            deltaY = (signy<0)?0:(magnetY - ball.position.y);
+            ball.moveInMagneticField(deltaX, deltaY, 1.2f);
+        }
     }
-    else {
-        float signx = ((magnetX-ball.position.x)*hor);
-        float signy = ((magnetY-ball.position.y)*vert);
-        printf("signx:%f signy:%f\n", signx, signy);
-        deltaX = (signx<0)?0:(magnetX - ball.position.x);
-        deltaY = (signy<0)?0:(magnetY - ball.position.y);
-        // printf("temp:%f temp2:%f now:%f now2:%f deltaX:%f deltaY:%f\n", temp, temp2, (magnetX - ball.position.x), (magnetY - ball.position.y), deltaX, deltaY);
-        ball.moveInMagneticField(deltaX, deltaY, 1.2f);
-    }
+    return;
 }
 
 void displayScore() {
@@ -193,11 +216,17 @@ void tick_elements() {
             }
         }
     }
-
     if ((ball.position.x>=1.3) && (ball.position.x<=2.85) && (ball.position.y<=-2.9)){
+        ball.speedx = 0.01;
+        if (inPond==0)
+            ball.adjustHeight(pool.radius);
         inPond = 1;
     }
     else{
+        if(isDrew==0)
+            ball.speedx = 0.1;
+        if (isJump==0 && isFall==0 && isDrew==0)
+            ball.position.y = -2.9;
         inPond = 0;
     }
 

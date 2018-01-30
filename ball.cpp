@@ -50,36 +50,34 @@ void Ball::moveLeft() {
 void Ball::moveInMagneticField(float a, float b, float c) {
     if (a==0 && b==0)
         return;
-    printf("%f %f\n", a,b);
     double theta = acos(a/sqrt(pow(a,2)+pow(b,2)));
-    float signx = (a<0)?-1:((a>0)?1:0);
-    float signy = (b<0)?-1:((b>0)?1:0);
+    float signx = (a<0)?-0.1:((a>0)?0.1:0);
+    float signy = (b<0)?-0.1:((b>0)?0.1:0);
     this->position.x += (signx*speedx);
     this->position.y += (signy*speedy);
     // printf("%f %f a:%f b:%f c:%f theta:%lf\n", deltax,deltay,a,b,c,theta*180.0f/M_PI);
     if(a!=0)
-        this->speedy += (tanf(theta)+1)*0.002;
+        this->speedy += (tanf(theta)+1)*0.00002;
     else{
         this->speedx=0;
-        this->speedy += 0.1;
+        this->speedy += 0.00001;
     }
     if(b!=0)
-        this->speedx += 0.002;
-    else
+        this->speedx += 0.00002;
+    else{
         this->speedy=0;
-    this->speedx += 0.002;
+        this->speedx += 0.00002;
+    }
+    if (this->position.y<=-2.9){
+        this->position.y -= speedy;
+        speedy -= 0.002;
+    }
     return;
 }
 
 void Ball::pondMoveLeft(float radius) {
-    float vertDisp = -2.9 - this->position.y; 
-    float alpha = asin(vertDisp/radius);
-    float dtheta = 0.1f;
-    float angle = (alpha + dtheta/2);
-    float dx = (radius*2*sinf(angle * M_PI / 180.0f)*sinf((dtheta/2) * M_PI / 180.0f));
-    float dy = (radius*2*cosf(angle * M_PI / 180.0f)*sinf((dtheta/2) * M_PI / 180.0f));
-    this->position.x -= dx;
-    this->position.y += dy;
+    this->position.x -= this->speedx;
+    adjustHeight(radius);
 }
 
 void Ball::moveRight() {
@@ -88,14 +86,16 @@ void Ball::moveRight() {
 }
 
 void Ball::pondMoveRight(float radius) {
-    float vertDisp = -2.9 - this->position.y; 
-    float alpha = asin(vertDisp/radius);
-    float dtheta = 0.1f;
-    float angle = (alpha + dtheta/2);
-    float dx = (radius*2*sinf(angle * M_PI / 180.0f)*sinf((dtheta/2) * M_PI / 180.0f));
-    float dy = (radius*2*cosf(angle * M_PI / 180.0f)*sinf((dtheta/2) * M_PI / 180.0f));
-    this->position.x += dx;
-    this->position.y -= dy;
+    this->position.x += this->speedx;
+    adjustHeight(radius);
+}
+
+void Ball::adjustHeight(float radius) {
+    float horzDisp = abs(2 - this->position.x);
+    float alpha = acos(horzDisp/radius);
+    float vertDisp = radius * sinf(alpha);
+    this->position.y = -2.9 - vertDisp;
+    return;
 }
 
 int Ball::jump() {
@@ -110,7 +110,6 @@ int Ball::jump() {
         return 0;
     }
     return 1;
-    // this->position.z = 1;
 }
 
 int Ball::fall() {
@@ -120,7 +119,6 @@ int Ball::fall() {
         return 0;
     }
     return 1;
-    // this->position.z = 1;
 }
 
 bounding_box_t Ball::bounding_box() {
