@@ -6,6 +6,8 @@
 #include "pool.cpp"
 #include "pole.cpp"
 #include "pole.h"
+#include "porcupine.h"
+#include "porcupine.cpp"
 #include "ground.h"
 #include "ground.cpp"
 #include "timer.cpp"
@@ -30,8 +32,9 @@ Pool pool;
 Pole tPole1, tPole2;
 Pole mPoleCenter, mPoleEnd1, mPoleEnd2;
 Pool trampoline;
+Porcupine porcupine;
 
-int isJump = 0, isDrew=0, isFall = 0, doneJump, isCameraChange=0, score = 0, levels=10, currentLevel=1, penalty=0, limit=50, inPond=0, isMagnet=0, current_frame=0, endTime=0, start_time=0, vert=0, hor=0;
+int isJump = 0, isDrew=0, isFall = 0, doneJump, isCameraChange=0, score = 0, levels=10, currentLevel=1, penalty=0, limit=50, inPond=0, isMagnet=0, current_frame=0, endTime=0, start_time=0, vert=0, hor=0, inPorcupine=0;
 
 float screen_zoom = 1, screen_center_x = 0, screen_center_y = 0, magnetX=0, magnetY=0, deltaX=10000,deltaY=10000;
 
@@ -83,6 +86,8 @@ void draw() {
     trampoline.draw(VP);
     tPole1.draw(VP);
     tPole2.draw(VP);
+    if(currentLevel==4)
+        porcupine.draw(VP);
     if (isMagnet==1 && isDrew==1){
         mPoleEnd1.draw(VP);
         mPoleEnd2.draw(VP);
@@ -152,11 +157,12 @@ void tick_input(GLFWwindow *window) {
 }
 
 void displayScore() {
-    printf("SCORE : %d points\n", score);
+    char buffer[100];
+    sprintf(buffer, "Pacman Killer Level: %d Score: %d",currentLevel-1, score);
+    glfwSetWindowTitle(window,buffer);
 }
 
 void initLevel(){
-    printf("LEVEL: %d\n", currentLevel);
     score = 0;
     penalty = currentLevel*3;
     limit = (currentLevel+1)*50;
@@ -193,6 +199,8 @@ void drawMagnet()
 
 void tick_elements() {
     current_frame++;
+    if (currentLevel==4)
+        porcupine.move();
     if (isMagnet==1)
     {
         if (isDrew==1){
@@ -201,6 +209,7 @@ void tick_elements() {
                 isDrew=0;
                 ball.speedx = 0.1;
                 ball.speedy = 0.1;
+                isJump=0;
                 isFall=1;
             }
         }
@@ -230,7 +239,7 @@ void tick_elements() {
         inPond = 0;
     }
 
-    if ((ball.position.x>=-2.5) && (ball.position.x<=-1.5) &&ball.position.y<=-2.5){
+    if ((ball.position.x>=-3.58) && (ball.position.x<=-2.42) &&ball.position.y<=-2.5){
         isJump = 1;
         isFall = 0;
         ball.speedy *= 1.35;
@@ -257,7 +266,7 @@ void tick_elements() {
     {
         if (detect_collision(ball.bounding_box(), enemies[i].bounding_box())) {
             if((ball.position.y)<=((enemies[i]).position.y)) {
-                if(isFall==0){
+                if(isFall==0) {
                     isFall = 1;
                     isJump = 0;
                 }
@@ -278,7 +287,18 @@ void tick_elements() {
             displayScore();
         }
     }
-
+    if (currentLevel==4) {
+        if (detect_collision(ball.bounding_box(), porcupine.bounding_box())){
+            if(inPorcupine==0){
+                inPorcupine=1;
+                score -= 50;
+                displayScore();   
+            }
+        }
+        else {
+            inPorcupine=0;
+        }
+    }
     for (int i=0; i <enemies.size(); ++i)
     {
         if(((enemies[i]).position.x - (enemies[i]).radius)>=4) {
@@ -299,7 +319,7 @@ void createEnemies () {
         while (j<3){
             int lowx = -4 + 2.5*j;
             float xcoord = lowx + static_cast <float> (rand()) / (static_cast <float> (RAND_MAX/1.0));
-            float ycoord = lowy + static_cast <float> (rand()) /(static_cast <float> (RAND_MAX/(1.0)));        
+            float ycoord = lowy + static_cast <float> (rand()) /(static_cast <float> (RAND_MAX/(1.0)));
             float radius = 0.5 + static_cast <float> (rand()) /(static_cast <float> (RAND_MAX/(0.25)));
             int colorIndex = static_cast <float> (rand()) / (static_cast <float> (RAND_MAX/8));
             enemies[k++] = Ball(xcoord,ycoord,radius, colorsArray[colorIndex],0.01);
@@ -314,14 +334,25 @@ void createEnemies () {
 void initGL(GLFWwindow *window, int width, int height) {
     /* Objects should be created before any other gl function and shaders */
     // Create the models
+    if (currentLevel==2)
+    {
+        cout << "Controls:\n";
+        cout << "Left Arrow or Left Touchpad (move left)\n";
+        cout << "Right Arrow or Right Touchpad (move right)\n";
+        cout << "Up Arrow or Spacebar (jump)\n";
+        cout << "Scroll in (zoom in) and scroll out (zoom out)\n";
+    }
 
     screen_center_y = 0;
-    ball        = Ball(0, -2.9, 0.3f, COLOR_DARKBLUE, 0.1);
+    ball        = Ball(-3.6, -2.9, 0.3f, COLOR_DARKBLUE, 0.1);
     ground      = Ground(-2, -5.5, COLOR_GREEN);
     pool        = Pool(2, -3.2, 0.8f, COLOR_LIGHTBLUE);
-    trampoline  = Pool(-2, -2.7, 0.5f, COLOR_BROWN);
-    tPole1       = Pole(-2.5, -2.9, COLOR_BROWN, vertex_buffer_data);
-    tPole2       = Pole(-1.5, -2.9, COLOR_BROWN, vertex_buffer_data);
+    trampoline  = Pool(-2.5, -2.7, 0.5f, COLOR_BROWN);
+    tPole1      = Pole(-3.0, -2.9, COLOR_BROWN, vertex_buffer_data);
+    tPole2      = Pole(-2.0, -2.9, COLOR_BROWN, vertex_buffer_data);
+    
+    if (currentLevel==4)
+        porcupine   = Porcupine(-1, -3.2, COLOR_DARKBROWN);
 
     createEnemies();
 
@@ -340,11 +371,6 @@ void initGL(GLFWwindow *window, int width, int height) {
 
     glEnable (GL_DEPTH_TEST);
     glDepthFunc (GL_LEQUAL);
-
-    cout << "VENDOR: " << glGetString(GL_VENDOR) << endl;
-    cout << "RENDERER: " << glGetString(GL_RENDERER) << endl;
-    cout << "VERSION: " << glGetString(GL_VERSION) << endl;
-    cout << "GLSL: " << glGetString(GL_SHADING_LANGUAGE_VERSION) << endl;
 }
 
 int main(int argc, char **argv) {
@@ -385,6 +411,7 @@ int main(int argc, char **argv) {
                     if(doneJump==0){
                         isFall = 0;
                         isJump = 0;
+                        ball.position.y=-3;
                     }
                 }
                 tick_input(window);

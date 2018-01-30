@@ -44,7 +44,6 @@ void Ball::set_position(float x, float y) {
 
 void Ball::moveLeft() {
     this->position.x -= this->speedx;
-    // this->position.z = 1;
 }
 
 void Ball::moveInMagneticField(float a, float b, float c) {
@@ -55,7 +54,6 @@ void Ball::moveInMagneticField(float a, float b, float c) {
     float signy = (b<0)?-0.1:((b>0)?0.1:0);
     this->position.x += (signx*speedx);
     this->position.y += (signy*speedy);
-    // printf("%f %f a:%f b:%f c:%f theta:%lf\n", deltax,deltay,a,b,c,theta*180.0f/M_PI);
     if(a!=0)
         this->speedy += (tanf(theta)+1)*0.00002;
     else{
